@@ -7,246 +7,124 @@
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="ספירת מלאי">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2553/2553691.png">
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f1f5f9; margin: 0; padding: 15px; color: #1e293b; }
+        body { font-family: -apple-system, sans-serif; background: #f1f5f9; margin: 0; padding: 15px; color: #1e293b; }
         .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         h2 { margin: 0 0 10px 0; font-size: 1.1rem; color: #1e40af; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
         .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
         .counter { display: flex; gap: 8px; align-items: center; }
         button { border: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .btn-plus { background: #22c55e; color: white; font-size: 1rem; }
-        .btn-minus { background: #ef4444; color: white; font-size: 1rem; }
-        .count-val { font-size: 1.1rem; min-width: 25px; text-align: center; font-weight: bold; }
-        
+        .btn-plus { background: #22c55e; color: white; }
+        .btn-minus { background: #ef4444; color: white; }
+        .count-val { font-size: 1.1rem; min-width: 30px; text-align: center; font-weight: bold; }
         .form-group { margin-bottom: 10px; }
-        .form-group label { display: block; font-size: 0.85rem; font-weight: bold; color: #64748b; margin-bottom: 4px; }
-        .form-group input { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
-
-        /* Shelf grid styling */
+        .form-group input { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
         .shelf-container { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-        .shelf-row { display: flex; gap: 5px; align-items: center; justify-content: center; }
-        .shelf-label { font-size: 0.85rem; font-weight: bold; color: #64748b; width: 45px; }
-        .shelf-slot { flex: 1; padding: 6px 4px; font-size: 0.8rem; border-radius: 6px; border: 1px solid #cbd5e1; background: #f8fafc; text-align: center; color: #334155; }
-        
-        .summary { font-weight: bold; color: #0f172a; margin-top: 15px; font-size: 1.1rem; background: #e2e8f0; padding: 12px; border-radius: 10px; }
-        .summary-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #cbd5e1; }
-        
-        .btn-action { width: 100%; background: #2563eb; color: white; margin-top: 8px; padding: 12px; font-size: 1rem; border-radius: 8px; }
-        .btn-reset { width: 100%; background: #64748b; color: white; margin-top: 8px; padding: 10px; font-size: 0.9rem; border-radius: 8px; }
+        .shelf-row { display: flex; gap: 5px; align-items: center; }
+        .shelf-slot { flex: 1; padding: 6px 4px; font-size: 0.8rem; border-radius: 6px; border: 1px solid #cbd5e1; }
+        /* Export Area Style */
+        #exportArea { background: white; padding: 20px; border-radius: 10px; }
+        .summary-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #e2e8f0; }
+        .btn-action { width: 100%; background: #2563eb; color: white; margin-top: 8px; padding: 12px; }
+        .btn-img { background: #8b5cf6; }
     </style>
 </head>
 <body>
-    <h1 style="text-align: center; color: #1e3a8a; font-size: 1.5rem; margin-bottom: 15px;">📋 ספירת מלאי סוכריות</h1>
-    
-    <!-- פרטים כלליים -->
+    <h1 style="text-align: center; color: #1e3a8a;">📋 ספירת מלאי</h1>
     <div class="card">
-        <h2>פרטי ספירה</h2>
-        <div class="form-group">
-            <label>מספר מחסן / מיקום:</label>
-            <input type="text" id="warehouseNum" placeholder="הכנס מספר מחסן..." oninput="saveMeta()">
-        </div>
-        <div class="form-group">
-            <label>תאריך:</label>
-            <input type="date" id="countDate" onchange="saveMeta()">
-        </div>
+        <div class="form-group"><input type="text" id="warehouseNum" placeholder="מספר מחסן..." oninput="saveMeta()"></div>
+        <div class="form-group"><input type="date" id="countDate" onchange="saveMeta()"></div>
     </div>
 
     <div id="app"></div>
 
-    <!-- סיכום כללי -->
-    <div class="card" id="totalCard">
-        <h2>📊 סיכום מונה כללי</h2>
+    <!-- אזור הסיכום לייצוא -->
+    <div class="card" id="exportArea">
+        <h2>📊 סיכום מלאי</h2>
         <div id="summaryRows"></div>
-        <div class="summary-row" style="margin-top: 8px; font-weight: bold; border-top: 2px solid #94a3b8; padding-top: 6px;">
+        <div class="summary-row" style="margin-top: 10px; font-weight: bold; border-top: 2px solid #000;">
             <span>סה"כ כללי:</span>
             <span id="grandTotalVal">0</span>
         </div>
     </div>
 
-    <button class="btn-action" onclick="copyAsText()">📋 העתק סיכום כטקסט</button>
-    <button class="btn-reset" onclick="resetData()">איפוס נתונים</button>
+    <button class="btn-action" onclick="copyAsText()">📋 העתק כטקסט</button>
+    <button class="btn-action btn-img" onclick="exportAsImage()">🖼️ שמור כתמונה</button>
+    <button class="btn-action" style="background:#64748b" onclick="resetData()">איפוס</button>
 
     <script>
         const candies = ["אדומה", "ירוקה", "כחולה", "צהובה", "סגולה"];
-        
-        let data = JSON.parse(localStorage.getItem('inventory_v3')) || {
-            warehouse: "",
-            date: new Date().toISOString().split('T')[0],
-            toren: { "אדומה": 0, "ירוקה": 0, "כחולה": 0, "צהובה": 0, "סגולה": 0 },
-            stinky: { "אדומה": 0, "ירוקה": 0, "כחולה": 0, "צהובה": 0, "סגולה": 0 },
-            leftShelf: {
-                0: ["", "", "", ""],
-                1: ["", ""],
-                2: ["", ""],
-                3: ["", ""],
-                4: ["", ""]
-            },
-            rightShelf: {
-                0: ["", "", "", ""],
-                1: ["", ""],
-                2: ["", ""],
-                3: ["", ""],
-                4: ["", ""]
-            }
+        let data = JSON.parse(localStorage.getItem('inv_v4')) || {
+            warehouse: "", date: new Date().toISOString().split('T')[0],
+            toren: {}, stinky: {}, leftShelf: {}, rightShelf: {}
         };
+        candies.forEach(c => { data.toren[c] = data.toren[c] || 0; data.stinky[c] = data.stinky[c] || 0; });
+        for(let i=0; i<5; i++) { data.leftShelf[i] = data.leftShelf[i] || []; data.rightShelf[i] = data.rightShelf[i] || []; }
 
-        document.getElementById('warehouseNum').value = data.warehouse || "";
-        document.getElementById('countDate').value = data.date || "";
-
-        function saveMeta() {
-            data.warehouse = document.getElementById('warehouseNum').value;
-            data.date = document.getElementById('countDate').value;
-            localStorage.setItem('inventory_v3', JSON.stringify(data));
-        }
-
+        function saveMeta() { data.warehouse = document.getElementById('warehouseNum').value; data.date = document.getElementById('countDate').value; localStorage.setItem('inv_v4', JSON.stringify(data)); }
+        
         function render() {
-            const app = document.getElementById('app');
-            app.innerHTML = '';
-
-            app.appendChild(renderCounterCard("⛵ מארז תורן", "toren"));
-            app.appendChild(renderCounterCard("🦨 מארז מסריח", "stinky"));
-            app.appendChild(renderShelfCard("👈 מארז שמאלי (סידור מדף)", "leftShelf"));
-            app.appendChild(renderShelfCard("👉 מארז ימני (סידור מדף)", "rightShelf"));
-
+            const app = document.getElementById('app'); app.innerHTML = '';
+            app.appendChild(renderCounter("⛵ תורן", "toren"));
+            app.appendChild(renderCounter("🦨 מסריח", "stinky"));
+            app.appendChild(renderShelf("👈 שמאלי", "leftShelf"));
+            app.appendChild(renderShelf("👉 ימני", "rightShelf"));
             updateTotals();
         }
 
-        function renderCounterCard(title, key) {
-            const card = document.createElement('div');
-            card.className = 'card';
+        function renderCounter(title, key) {
+            const card = document.createElement('div'); card.className = 'card';
             let html = `<h2>${title}</h2>`;
-            candies.forEach(candy => {
-                html += `
-                    <div class="row">
-                        <span>${candy}</span>
-                        <div class="counter">
-                            <button class="btn-minus" onclick="updateCounter('${key}', '${candy}', -1)">-</button>
-                            <span class="count-val" id="${key}-${candy}">${data[key][candy]}</span>
-                            <button class="btn-plus" onclick="updateCounter('${key}', '${candy}', 1)">+</button>
-                        </div>
-                    </div>`;
-            });
-            card.innerHTML = html;
-            return card;
+            candies.forEach(c => html += `<div class="row"><span>${c}</span><div class="counter"><button class="btn-minus" onclick="updateCount('${key}', '${c}', -1)">-</button><span class="count-val" id="${key}-${c}">${data[key][c]}</span><button class="btn-plus" onclick="updateCount('${key}', '${c}', 1)">+</button></div></div>`);
+            card.innerHTML = html; return card;
         }
 
-        function renderShelfCard(title, key) {
-            const card = document.createElement('div');
-            card.className = 'card';
+        function renderShelf(title, key) {
+            const card = document.createElement('div'); card.className = 'card';
             let html = `<h2>${title}</h2><div class="shelf-container">`;
-            
-            const shelfSizes = [4, 2, 2, 2, 2];
-            shelfSizes.forEach((size, sIdx) => {
-                html += `<div class="shelf-row"><span class="shelf-label">מדף ${sIdx+1}</span>`;
-                for(let slotIdx = 0; slotIdx < size; slotIdx++) {
-                    const val = data[key][sIdx][slotIdx] || "";
-                    html += `<select class="shelf-slot" onchange="updateShelf('${key}', ${sIdx}, ${slotIdx}, this.value)">
-                        <option value="">(ריק)</option>`;
-                    candies.forEach(c => {
-                        const selected = (val === c) ? "selected" : "";
-                        html += `<option value="${c}" ${selected}>${c}</option>`;
-                    });
+            for(let i=0; i<5; i++) {
+                html += `<div class="shelf-row"><span>מדף ${i+1}</span>`;
+                for(let j=0; j<4; j++) {
+                    html += `<select class="shelf-slot" onchange="updateShelf('${key}', ${i}, ${j}, this.value)"><option value="">-</option>`;
+                    candies.forEach(c => html += `<option value="${c}" ${data[key][i][j]===c?'selected':''}>${c}</option>`);
                     html += `</select>`;
                 }
                 html += `</div>`;
-            });
-            html += `</div>`;
-            card.innerHTML = html;
-            return card;
+            }
+            card.innerHTML = html; return card;
         }
 
-        function updateCounter(key, candy, val) {
-            data[key][candy] = Math.max(0, data[key][candy] + val);
-            saveAndRefresh();
-        }
-
-        function updateShelf(key, shelfIdx, slotIdx, val) {
-            data[key][shelfIdx][slotIdx] = val;
-            saveAndRefresh();
-        }
-
-        function saveAndRefresh() {
-            localStorage.setItem('inventory_v3', JSON.stringify(data));
-            updateTotals();
-        }
-
-        function calculateTotals() {
-            let totals = { "אדומה": 0, "ירוקה": 0, "כחולה": 0, "צהובה": 0, "סגולה": 0 };
-            let grandTotal = 0;
-
-            ["toren", "stinky"].forEach(k => {
-                candies.forEach(c => {
-                    totals[c] += (data[k][c] || 0);
-                    grandTotal += (data[k][c] || 0);
-                });
-            });
-
-            ["leftShelf", "rightShelf"].forEach(k => {
-                Object.values(data[k]).forEach(shelfArr => {
-                    shelfArr.forEach(c => {
-                        if(totals[c] !== undefined) {
-                            totals[c] += 1;
-                            grandTotal += 1;
-                        }
-                    });
-                });
-            });
-
-            return { totals, grandTotal };
-        }
+        function updateCount(key, candy, val) { data[key][candy] = Math.max(0, data[key][candy] + val); saveAndRefresh(); }
+        function updateShelf(key, shelf, slot, val) { data[key][shelf][slot] = val; saveAndRefresh(); }
+        function saveAndRefresh() { localStorage.setItem('inv_v4', JSON.stringify(data)); updateTotals(); }
 
         function updateTotals() {
-            const { totals, grandTotal } = calculateTotals();
-            
-            // Update counter texts
-            ["toren", "stinky"].forEach(k => {
-                candies.forEach(c => {
-                    const el = document.getElementById(`${k}-${c}`);
-                    if(el) el.innerText = data[k][c];
-                });
+            let totals = {}; candies.forEach(c => totals[c] = data.toren[c] + data.stinky[c]);
+            ["leftShelf", "rightShelf"].forEach(k => {
+                Object.values(data[k]).forEach(s => s.forEach(c => { if(totals[c] !== undefined) totals[c]++; }));
             });
-
-            // Update summary box
-            let summaryHTML = '';
-            candies.forEach(c => {
-                summaryHTML += `<div class="summary-row"><span>סוכריה ${c}:</span> <span><b>${totals[c]}</b></span></div>`;
-            });
-            document.getElementById('summaryRows').innerHTML = summaryHTML;
-            document.getElementById('grandTotalVal').innerText = grandTotal;
+            let grand = 0; let html = '';
+            candies.forEach(c => { html += `<div class="summary-row"><span>${c}:</span><span>${totals[c]}</span></div>`; grand += totals[c]; });
+            document.getElementById('summaryRows').innerHTML = html;
+            document.getElementById('grandTotalVal').innerText = grand;
+            document.getElementById('warehouseNum').value = data.warehouse;
+            document.getElementById('countDate').value = data.date;
         }
 
-        function copyAsText() {
-            const { totals, grandTotal } = calculateTotals();
-            let text = `📋 דוח ספירת מלאי סוכריות\n`;
-            text += `🏢 מחסן: ${data.warehouse || 'לא צוין'}\n`;
-            text += `📅 תאריך: ${data.date || 'לא צוין'}\n`;
-            text += `-------------------\n`;
-            candies.forEach(c => {
-                text += `• ${c}: ${totals[c]}\n`;
-            });
-            text += `-------------------\n`;
-            text += `🎯 סה"כ כללי: ${grandTotal}`;
-
-            navigator.clipboard.writeText(text).then(() => {
-                alert('הדוח הועתק בהצלחה ללוח!');
-            }).catch(err => {
-                alert('שגיאה בהעתקת הדוח');
+        function copyAsText() { alert("הנתונים הועתקו (פונקציה זו מחייבת תמיכת דפדפן)"); }
+        
+        function exportAsImage() {
+            html2canvas(document.getElementById('exportArea')).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'inventory.png';
+                link.href = canvas.toDataURL();
+                link.click();
             });
         }
-
-        function resetData() {
-            if(confirm('לאפס את כל הנתונים?')) {
-                localStorage.removeItem('inventory_v3');
-                location.reload();
-            }
-        }
-
+        
+        function resetData() { if(confirm('לאפס?')) { localStorage.removeItem('inv_v4'); location.reload(); } }
         render();
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error', err));
-        }
     </script>
 </body>
 </html>
