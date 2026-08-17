@@ -25,10 +25,14 @@
         .shelf-row { display: flex; gap: 5px; align-items: center; }
         .shelf-slot { flex: 1; padding: 6px 4px; font-size: 0.8rem; border-radius: 6px; border: 1px solid #cbd5e1; }
         
-        /* Export Area Wrapper */
         #exportArea { background: #f1f5f9; padding: 0; margin: 0; }
-        
-        .summary-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #e2e8f0; }
+
+        /* Summary Table Styling */
+        .summary-table { width: 100%; border-collapse: collapse; margin-top: 5px; background: white; font-size: 0.9rem; text-align: center; }
+        .summary-table th, .summary-table td { border: 1px solid #cbd5e1; padding: 8px 4px; }
+        .summary-table th { background: #f8fafc; color: #1e40af; font-weight: bold; }
+        .summary-table tr:last-child { background: #e0f2fe; font-weight: bold; color: #0369a1; }
+
         .btn-action { width: 100%; background: #2563eb; color: white; margin-top: 8px; padding: 12px; border-radius: 8px; font-size: 1rem; }
         .btn-img { background: #8b5cf6; }
     </style>
@@ -36,7 +40,6 @@
 <body>
     <h1 style="text-align: center; color: #1e3a8a; font-size: 1.5rem; margin-bottom: 15px;">📋 ספירת מלאי סוכריות</h1>
 
-    <!-- מעטפת אחת כוללת לייצוא מלא של הדו"ח -->
     <div id="exportArea">
         <div class="card">
             <h2>פרטי ספירה</h2>
@@ -53,12 +56,22 @@
         <div id="app"></div>
 
         <div class="card">
-            <h2>📊 סיכום מלאי כללי</h2>
-            <div id="summaryRows"></div>
-            <div class="summary-row" style="margin-top: 10px; font-weight: bold; border-top: 2px solid #000;">
-                <span>סה"כ כללי:</span>
-                <span id="grandTotalVal">0</span>
-            </div>
+            <h2>📊 סיכום מלאי</h2>
+            <table class="summary-table">
+                <thead>
+                    <tr>
+                        <th>סוג</th>
+                        <th>תורן</th>
+                        <th>מסריח</th>
+                        <th>שמאלי</th>
+                        <th>ימני</th>
+                        <th>סה"כ</th>
+                    </tr>
+                </thead>
+                <tbody id="summaryTableBody">
+                    <!-- מודבק דינמית -->
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -68,7 +81,7 @@
 
     <script>
         const candies = ["אדומה", "ירוקה", "כחולה", "צהובה", "סגולה"];
-        let data = JSON.parse(localStorage.getItem('inv_v5')) || {
+        let data = JSON.parse(localStorage.getItem('inv_v6')) || {
             warehouse: "", date: new Date().toISOString().split('T')[0],
             toren: {}, stinky: {}, leftShelf: {}, rightShelf: {}
         };
@@ -86,7 +99,7 @@
         function saveMeta() { 
             data.warehouse = document.getElementById('warehouseNum').value; 
             data.date = document.getElementById('countDate').value; 
-            localStorage.setItem('inv_v5', JSON.stringify(data)); 
+            localStorage.setItem('inv_v6', JSON.stringify(data)); 
         }
         
         function render() {
@@ -156,25 +169,12 @@
         }
         
         function saveAndRefresh() { 
-            localStorage.setItem('inv_v5', JSON.stringify(data)); 
+            localStorage.setItem('inv_v6', JSON.stringify(data)); 
             updateTotals(); 
         }
 
         function updateTotals() {
-            let totals = {}; 
-            candies.forEach(c => totals[c] = (data.toren[c] || 0) + (data.stinky[c] || 0));
-            
-            ["leftShelf", "rightShelf"].forEach(k => {
-                Object.values(data[k]).forEach(shelfArr => {
-                    if(Array.isArray(shelfArr)) {
-                        shelfArr.forEach(c => { 
-                            if(totals[c] !== undefined && c !== "") totals[c]++; 
-                        });
-                    }
-                });
-            });
-
-            // עדכון המספרים על גבי המונים במסך
+            // Update counter texts on screen
             ["toren", "stinky"].forEach(k => {
                 candies.forEach(c => {
                     const el = document.getElementById(`${k}-${c}`);
@@ -182,37 +182,78 @@
                 });
             });
 
-            let grand = 0; 
-            let html = '';
-            candies.forEach(c => { 
-                html += `<div class="summary-row"><span>סוכריה ${c}:</span><span><b>${totals[c]}</b></span></div>`; 
-                grand += totals[c]; 
+            let tableHTML = '';
+            let totalsToren = 0, totalsStinky = 0, totalsLeft = 0, totalsRight = 0, grandTotal = 0;
+
+            candies.forEach(c => {
+                let t = data.toren[c] || 0;
+                let s = data.stinky[c] || 0;
+                
+                let l = 0;
+                Object.values(data.leftShelf).forEach(shelfArr => {
+                    if(Array.isArray(shelfArr)) {
+                        shelfArr.forEach(item => { if(item === c) l++; });
+                    }
+                });
+
+                let r = 0;
+                Object.values(data.rightShelf).forEach(shelfArr => {
+                    if(Array.isArray(shelfArr)) {
+                        shelfArr.forEach(item => { if(item === c) r++; });
+                    }
+                });
+
+                let rowSum = t + s + l + r;
+
+                totalsToren += t;
+                totalsStinky += s;
+                totalsLeft += l;
+                totalsRight += r;
+                grandTotal += rowSum;
+
+                tableHTML += `
+                    <tr>
+                        <td><b>${c}</b></td>
+                        <td>${t}</td>
+                        <td>${s}</td>
+                        <td>${l}</td>
+                        <td>${r}</td>
+                        <td><b>${rowSum}</b></td>
+                    </tr>
+                `;
             });
-            
-            document.getElementById('summaryRows').innerHTML = html;
-            document.getElementById('grandTotalVal').innerText = grand;
+
+            // Footer row
+            tableHTML += `
+                <tr>
+                    <td>סה"כ כללי</td>
+                    <td>${totalsToren}</td>
+                    <td>${totalsStinky}</td>
+                    <td>${totalsLeft}</td>
+                    <td>${totalsRight}</td>
+                    <td>${grandTotal}</td>
+                </tr>
+            `;
+
+            document.getElementById('summaryTableBody').innerHTML = tableHTML;
         }
 
         function copyAsText() {
-            let totals = {}; 
-            candies.forEach(c => totals[c] = (data.toren[c] || 0) + (data.stinky[c] || 0));
-            ["leftShelf", "rightShelf"].forEach(k => {
-                Object.values(data[k]).forEach(shelfArr => {
-                    if(Array.isArray(shelfArr)) {
-                        shelfArr.forEach(c => { if(totals[c] !== undefined && c !== "") totals[c]++; });
-                    }
-                });
-            });
-
             let text = `📋 דוח ספירת מלאי סוכריות\n`;
             text += `🏢 מחסן: ${data.warehouse || 'לא צוין'}\n`;
             text += `📅 תאריך: ${data.date || 'לא צוין'}\n`;
             text += `-------------------\n`;
-            candies.forEach(c => { text += `• ${c}: ${totals[c]}\n`; });
-            text += `-------------------\n`;
-            let grand = Object.values(totals).reduce((a, b) => a + b, 0);
-            text += `🎯 סה"כ כללי: ${grand}`;
-
+            
+            candies.forEach(c => {
+                let t = data.toren[c] || 0;
+                let s = data.stinky[c] || 0;
+                let l = 0, r = 0;
+                Object.values(data.leftShelf).forEach(arr => { if(Array.isArray(arr)) arr.forEach(item => { if(item === c) l++; }); });
+                Object.values(data.rightShelf).forEach(arr => { if(Array.isArray(arr)) arr.forEach(item => { if(item === c) r++; }); });
+                let rowSum = t + s + l + r;
+                text += `• ${c} | תורן: ${t}, מסריח: ${s}, שמאלי: ${l}, ימני: ${r} | סה"כ: ${rowSum}\n`;
+            });
+            
             navigator.clipboard.writeText(text).then(() => {
                 alert('הדוח הועתק בהצלחה ללוח!');
             }).catch(() => {
@@ -231,7 +272,7 @@
         
         function resetData() { 
             if(confirm('לאפס את כל הנתונים?')) { 
-                localStorage.removeItem('inv_v5'); 
+                localStorage.removeItem('inv_v6'); 
                 location.reload(); 
             } 
         }
