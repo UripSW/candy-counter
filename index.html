@@ -19,111 +19,223 @@
         .btn-minus { background: #ef4444; color: white; }
         .count-val { font-size: 1.1rem; min-width: 30px; text-align: center; font-weight: bold; }
         .form-group { margin-bottom: 10px; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: bold; color: #64748b; margin-bottom: 4px; }
         .form-group input { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
         .shelf-container { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
         .shelf-row { display: flex; gap: 5px; align-items: center; }
         .shelf-slot { flex: 1; padding: 6px 4px; font-size: 0.8rem; border-radius: 6px; border: 1px solid #cbd5e1; }
-        /* Export Area Style */
-        #exportArea { background: white; padding: 20px; border-radius: 10px; }
+        
+        /* Export Area Wrapper */
+        #exportArea { background: #f1f5f9; padding: 0; margin: 0; }
+        
         .summary-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #e2e8f0; }
-        .btn-action { width: 100%; background: #2563eb; color: white; margin-top: 8px; padding: 12px; }
+        .btn-action { width: 100%; background: #2563eb; color: white; margin-top: 8px; padding: 12px; border-radius: 8px; font-size: 1rem; }
         .btn-img { background: #8b5cf6; }
     </style>
 </head>
 <body>
-    <h1 style="text-align: center; color: #1e3a8a;">📋 ספירת מלאי</h1>
-    <div class="card">
-        <div class="form-group"><input type="text" id="warehouseNum" placeholder="מספר מחסן..." oninput="saveMeta()"></div>
-        <div class="form-group"><input type="date" id="countDate" onchange="saveMeta()"></div>
-    </div>
+    <h1 style="text-align: center; color: #1e3a8a; font-size: 1.5rem; margin-bottom: 15px;">📋 ספירת מלאי סוכריות</h1>
 
-    <div id="app"></div>
+    <!-- מעטפת אחת כוללת לייצוא מלא של הדו"ח -->
+    <div id="exportArea">
+        <div class="card">
+            <h2>פרטי ספירה</h2>
+            <div class="form-group">
+                <label>מספר מחסן / מיקום:</label>
+                <input type="text" id="warehouseNum" placeholder="הכנס מספר מחסן..." oninput="saveMeta()">
+            </div>
+            <div class="form-group">
+                <label>תאריך:</label>
+                <input type="date" id="countDate" onchange="saveMeta()">
+            </div>
+        </div>
 
-    <!-- אזור הסיכום לייצוא -->
-    <div class="card" id="exportArea">
-        <h2>📊 סיכום מלאי</h2>
-        <div id="summaryRows"></div>
-        <div class="summary-row" style="margin-top: 10px; font-weight: bold; border-top: 2px solid #000;">
-            <span>סה"כ כללי:</span>
-            <span id="grandTotalVal">0</span>
+        <div id="app"></div>
+
+        <div class="card">
+            <h2>📊 סיכום מלאי כללי</h2>
+            <div id="summaryRows"></div>
+            <div class="summary-row" style="margin-top: 10px; font-weight: bold; border-top: 2px solid #000;">
+                <span>סה"כ כללי:</span>
+                <span id="grandTotalVal">0</span>
+            </div>
         </div>
     </div>
 
     <button class="btn-action" onclick="copyAsText()">📋 העתק כטקסט</button>
-    <button class="btn-action btn-img" onclick="exportAsImage()">🖼️ שמור כתמונה</button>
-    <button class="btn-action" style="background:#64748b" onclick="resetData()">איפוס</button>
+    <button class="btn-action btn-img" onclick="exportAsImage()">🖼️ שמור כתמונה מלאה</button>
+    <button class="btn-action" style="background:#64748b" onclick="resetData()">איפוס נתונים</button>
 
     <script>
         const candies = ["אדומה", "ירוקה", "כחולה", "צהובה", "סגולה"];
-        let data = JSON.parse(localStorage.getItem('inv_v4')) || {
+        let data = JSON.parse(localStorage.getItem('inv_v5')) || {
             warehouse: "", date: new Date().toISOString().split('T')[0],
             toren: {}, stinky: {}, leftShelf: {}, rightShelf: {}
         };
-        candies.forEach(c => { data.toren[c] = data.toren[c] || 0; data.stinky[c] = data.stinky[c] || 0; });
-        for(let i=0; i<5; i++) { data.leftShelf[i] = data.leftShelf[i] || []; data.rightShelf[i] = data.rightShelf[i] || []; }
+        
+        candies.forEach(c => { 
+            data.toren[c] = data.toren[c] || 0; 
+            data.stinky[c] = data.stinky[c] || 0; 
+        });
+        
+        for(let i=0; i<5; i++) { 
+            data.leftShelf[i] = data.leftShelf[i] || []; 
+            data.rightShelf[i] = data.rightShelf[i] || []; 
+        }
 
-        function saveMeta() { data.warehouse = document.getElementById('warehouseNum').value; data.date = document.getElementById('countDate').value; localStorage.setItem('inv_v4', JSON.stringify(data)); }
+        function saveMeta() { 
+            data.warehouse = document.getElementById('warehouseNum').value; 
+            data.date = document.getElementById('countDate').value; 
+            localStorage.setItem('inv_v5', JSON.stringify(data)); 
+        }
         
         function render() {
-            const app = document.getElementById('app'); app.innerHTML = '';
-            app.appendChild(renderCounter("⛵ תורן", "toren"));
-            app.appendChild(renderCounter("🦨 מסריח", "stinky"));
-            app.appendChild(renderShelf("👈 שמאלי", "leftShelf"));
-            app.appendChild(renderShelf("👉 ימני", "rightShelf"));
+            const app = document.getElementById('app'); 
+            app.innerHTML = '';
+            app.appendChild(renderCounter("⛵ מארז תורן", "toren"));
+            app.appendChild(renderCounter("🦨 מארז מסריח", "stinky"));
+            app.appendChild(renderShelf("👈 מארז שמאלי", "leftShelf"));
+            app.appendChild(renderShelf("👉 מארז ימני", "rightShelf"));
+            
+            document.getElementById('warehouseNum').value = data.warehouse || "";
+            document.getElementById('countDate').value = data.date || "";
             updateTotals();
         }
 
         function renderCounter(title, key) {
-            const card = document.createElement('div'); card.className = 'card';
+            const card = document.createElement('div'); 
+            card.className = 'card';
             let html = `<h2>${title}</h2>`;
-            candies.forEach(c => html += `<div class="row"><span>${c}</span><div class="counter"><button class="btn-minus" onclick="updateCount('${key}', '${c}', -1)">-</button><span class="count-val" id="${key}-${c}">${data[key][c]}</span><button class="btn-plus" onclick="updateCount('${key}', '${c}', 1)">+</button></div></div>`);
-            card.innerHTML = html; return card;
+            candies.forEach(c => {
+                html += `
+                    <div class="row">
+                        <span>${c}</span>
+                        <div class="counter">
+                            <button class="btn-minus" onclick="updateCount('${key}', '${c}', -1)">-</button>
+                            <span class="count-val" id="${key}-${c}">${data[key][c]}</span>
+                            <button class="btn-plus" onclick="updateCount('${key}', '${c}', 1)">+</button>
+                        </div>
+                    </div>`;
+            });
+            card.innerHTML = html; 
+            return card;
         }
 
         function renderShelf(title, key) {
-            const card = document.createElement('div'); card.className = 'card';
+            const card = document.createElement('div'); 
+            card.className = 'card';
             let html = `<h2>${title}</h2><div class="shelf-container">`;
+            const shelfSizes = [4, 2, 2, 2, 2];
+            
             for(let i=0; i<5; i++) {
-                html += `<div class="shelf-row"><span>מדף ${i+1}</span>`;
-                for(let j=0; j<4; j++) {
-                    html += `<select class="shelf-slot" onchange="updateShelf('${key}', ${i}, ${j}, this.value)"><option value="">-</option>`;
-                    candies.forEach(c => html += `<option value="${c}" ${data[key][i][j]===c?'selected':''}>${c}</option>`);
+                html += `<div class="shelf-row"><span style="font-size:0.8rem; width:45px; font-weight:bold; color:#64748b;">מדף ${i+1}</span>`;
+                for(let j=0; j<shelfSizes[i]; j++) {
+                    html += `<select class="shelf-slot" onchange="updateShelf('${key}', ${i}, ${j}, this.value)"><option value="">(ריק)</option>`;
+                    candies.forEach(c => {
+                        const selected = (data[key][i] && data[key][i][j] === c) ? 'selected' : '';
+                        html += `<option value="${c}" ${selected}>${c}</option>`;
+                    });
                     html += `</select>`;
                 }
                 html += `</div>`;
             }
-            card.innerHTML = html; return card;
+            html += `</div>`;
+            card.innerHTML = html; 
+            return card;
         }
 
-        function updateCount(key, candy, val) { data[key][candy] = Math.max(0, data[key][candy] + val); saveAndRefresh(); }
-        function updateShelf(key, shelf, slot, val) { data[key][shelf][slot] = val; saveAndRefresh(); }
-        function saveAndRefresh() { localStorage.setItem('inv_v4', JSON.stringify(data)); updateTotals(); }
+        function updateCount(key, candy, val) { 
+            data[key][candy] = Math.max(0, data[key][candy] + val); 
+            saveAndRefresh(); 
+        }
+        
+        function updateShelf(key, shelf, slot, val) { 
+            if(!data[key][shelf]) data[key][shelf] = [];
+            data[key][shelf][slot] = val; 
+            saveAndRefresh(); 
+        }
+        
+        function saveAndRefresh() { 
+            localStorage.setItem('inv_v5', JSON.stringify(data)); 
+            updateTotals(); 
+        }
 
         function updateTotals() {
-            let totals = {}; candies.forEach(c => totals[c] = data.toren[c] + data.stinky[c]);
+            let totals = {}; 
+            candies.forEach(c => totals[c] = (data.toren[c] || 0) + (data.stinky[c] || 0));
+            
             ["leftShelf", "rightShelf"].forEach(k => {
-                Object.values(data[k]).forEach(s => s.forEach(c => { if(totals[c] !== undefined) totals[c]++; }));
+                Object.values(data[k]).forEach(shelfArr => {
+                    if(Array.isArray(shelfArr)) {
+                        shelfArr.forEach(c => { 
+                            if(totals[c] !== undefined && c !== "") totals[c]++; 
+                        });
+                    }
+                });
             });
-            let grand = 0; let html = '';
-            candies.forEach(c => { html += `<div class="summary-row"><span>${c}:</span><span>${totals[c]}</span></div>`; grand += totals[c]; });
+
+            // עדכון המספרים על גבי המונים במסך
+            ["toren", "stinky"].forEach(k => {
+                candies.forEach(c => {
+                    const el = document.getElementById(`${k}-${c}`);
+                    if(el) el.innerText = data[k][c];
+                });
+            });
+
+            let grand = 0; 
+            let html = '';
+            candies.forEach(c => { 
+                html += `<div class="summary-row"><span>סוכריה ${c}:</span><span><b>${totals[c]}</b></span></div>`; 
+                grand += totals[c]; 
+            });
+            
             document.getElementById('summaryRows').innerHTML = html;
             document.getElementById('grandTotalVal').innerText = grand;
-            document.getElementById('warehouseNum').value = data.warehouse;
-            document.getElementById('countDate').value = data.date;
         }
 
-        function copyAsText() { alert("הנתונים הועתקו (פונקציה זו מחייבת תמיכת דפדפן)"); }
+        function copyAsText() {
+            let totals = {}; 
+            candies.forEach(c => totals[c] = (data.toren[c] || 0) + (data.stinky[c] || 0));
+            ["leftShelf", "rightShelf"].forEach(k => {
+                Object.values(data[k]).forEach(shelfArr => {
+                    if(Array.isArray(shelfArr)) {
+                        shelfArr.forEach(c => { if(totals[c] !== undefined && c !== "") totals[c]++; });
+                    }
+                });
+            });
+
+            let text = `📋 דוח ספירת מלאי סוכריות\n`;
+            text += `🏢 מחסן: ${data.warehouse || 'לא צוין'}\n`;
+            text += `📅 תאריך: ${data.date || 'לא צוין'}\n`;
+            text += `-------------------\n`;
+            candies.forEach(c => { text += `• ${c}: ${totals[c]}\n`; });
+            text += `-------------------\n`;
+            let grand = Object.values(totals).reduce((a, b) => a + b, 0);
+            text += `🎯 סה"כ כללי: ${grand}`;
+
+            navigator.clipboard.writeText(text).then(() => {
+                alert('הדוח הועתק בהצלחה ללוח!');
+            }).catch(() => {
+                alert('שגיאה בהעתקת הדוח');
+            });
+        }
         
         function exportAsImage() {
-            html2canvas(document.getElementById('exportArea')).then(canvas => {
+            html2canvas(document.getElementById('exportArea'), { scale: 2 }).then(canvas => {
                 const link = document.createElement('a');
-                link.download = 'inventory.png';
-                link.href = canvas.toDataURL();
+                link.download = `inventory-${data.warehouse || 'report'}.png`;
+                link.href = canvas.toDataURL('image/png');
                 link.click();
             });
         }
         
-        function resetData() { if(confirm('לאפס?')) { localStorage.removeItem('inv_v4'); location.reload(); } }
+        function resetData() { 
+            if(confirm('לאפס את כל הנתונים?')) { 
+                localStorage.removeItem('inv_v5'); 
+                location.reload(); 
+            } 
+        }
+        
         render();
     </script>
 </body>
