@@ -1,0 +1,11 @@
+{
+  "name": "ספירת מלאי סוכריות",
+  "short_name": "מלאי",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#1e40af",
+  "icons": [
+    { "src": "https://cdn-icons-png.flaticon.com/512/2553/2553691.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
