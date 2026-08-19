@@ -38,7 +38,7 @@
     </style>
 </head>
 <body>
-    <h1 style="text-align: center; color: #1e3a8a; font-size: 1.5rem; margin-bottom: 15px;">📋 דוח תחמושת</h1>
+    <h1 style="text-align: center; color: #1e3a8a; font-size: 1.5rem; margin-bottom: 15px;"> 📋 דוח תחמושת 0.1</h1>
 
     <div id="exportArea">
         <div class="card">
@@ -62,9 +62,9 @@
                     <tr>
                         <th>סוג</th>
                         <th>5פ</th>
-                        <th>עומד</th>
                         <th>18פ טען</th>
                         <th>18פ מפקד</th>
+                        <th>עומד</th>
                         <th>סה"כ</th>
                     </tr>
                 </thead>
@@ -75,17 +75,20 @@
         </div>
     </div>
 
-    <button class="btn-action" onclick="copyAsText()">📋 העתק כטקסט</button>
+    <button class="btn-action" style="background:#059669" onclick="copyAsTextByLocation()">📋 העתק כטקסט לפי מיקום התחמושת</button>
+    <button class="btn-action" onclick="copyAsText()">📋 העתק כטקסט לפי סוג תחמושת </button>
     <button class="btn-action btn-img" onclick="exportAsImage()">🖼️ שמור כתמונה מלאה</button>
     <button class="btn-action" style="background:#64748b" onclick="resetData()">איפוס נתונים</button>
 
     <script>
         const candies = ["חצב", "כלנית", "חלול", "חץ", "אלומיניום","אחר"];
+        const MAX_TOREN = 10; // 
+        const MAX_STINKY = 4; // שנה למספר המרבי הכולל שתרצה לאפשר במארז מסריח
         let data = JSON.parse(localStorage.getItem('inv_v6')) || {
             warehouse: "", date: new Date().toISOString().split('T')[0],
-            toren: {}, stinky: {}, leftShelf: {}, rightShelf: {}
+            toren: {}, leftShelf: {}, rightShelf: {},stinky: {}
         };
-        
+
         candies.forEach(c => { 
             data.toren[c] = data.toren[c] || 0; 
             data.stinky[c] = data.stinky[c] || 0; 
@@ -106,9 +109,9 @@
             const app = document.getElementById('app'); 
             app.innerHTML = '';
             app.appendChild(renderCounter("⛵ מארז 5פ", "toren"));
-            app.appendChild(renderCounter("🦨 מארז עומד", "stinky"));
             app.appendChild(renderShelf("👈 מארז 18פ טען", "leftShelf"));
             app.appendChild(renderShelf("👉 מארז 18פ מפקד", "rightShelf"));
+            app.appendChild(renderCounter("🦨 מארז עומד", "stinky"));
             
             document.getElementById('warehouseNum').value = data.warehouse || "";
             document.getElementById('countDate').value = data.date || "";
@@ -158,10 +161,29 @@
         }
 
         function updateCount(key, candy, val) { 
+            if (val > 0) {
+                // הגבלה כוללת למארז תורן
+                if (key === 'toren') {
+                    let torenTotal = Object.values(data.toren).reduce((a, b) => a + b, 0);
+                    if (torenTotal + val > MAX_TOREN) {
+                        alert(`מארז תורן מלא! מותר עד ${MAX_TOREN} סוכריות בסך הכל.`);
+                        return;
+                    }
+                }
+
+                // הגבלה כוללת למארז מסריח
+                if (key === 'stinky') {
+                    let stinkyTotal = Object.values(data.stinky).reduce((a, b) => a + b, 0);
+                    if (stinkyTotal + val > MAX_STINKY) {
+                        alert(`מארז מסריח מלא! מותר עד ${MAX_STINKY} סוכריות בסך הכל.`);
+                        return;
+                    }
+                }
+            }
+
             data[key][candy] = Math.max(0, data[key][candy] + val); 
             saveAndRefresh(); 
         }
-        
         function updateShelf(key, shelf, slot, val) { 
             if(!data[key][shelf]) data[key][shelf] = [];
             data[key][shelf][slot] = val; 
@@ -228,9 +250,9 @@
                 <tr>
                     <td>סה"כ כללי</td>
                     <td>${totalsToren}</td>
-                    <td>${totalsStinky}</td>
                     <td>${totalsLeft}</td>
                     <td>${totalsRight}</td>
+                    <td>${totalsStinky}</td>
                     <td>${grandTotal}</td>
                 </tr>
             `;
@@ -251,7 +273,7 @@
                 Object.values(data.leftShelf).forEach(arr => { if(Array.isArray(arr)) arr.forEach(item => { if(item === c) l++; }); });
                 Object.values(data.rightShelf).forEach(arr => { if(Array.isArray(arr)) arr.forEach(item => { if(item === c) r++; }); });
                 let rowSum = t + s + l + r;
-                text += `• ${c} | 5פ: ${t}, עומד: ${s}, 18פ טען: ${l}, 18פ מפקד: ${r} | סה"כ: ${rowSum}\n`;
+                text += `• ${c} | 5פ: ${t}, 18פ טען: ${l}, 18פ מפקד: ${r}, עומד: ${s} | סה"כ: ${rowSum}\n`;
             });
             
             navigator.clipboard.writeText(text).then(() => {
@@ -260,7 +282,70 @@
                 alert('שגיאה בהעתקת הדוח');
             });
         }
-        
+
+        function copyAsTextByLocation() {
+            let text = `📋 דוח ספירת מלאי לפי מיקומים\n`;
+            text += `🏢 צלמ: ${data.warehouse || 'לא צוין'}\n`;
+            text += `📅 תאריך: ${data.date || 'לא צוין'}\n`;
+            text += `-------------------\n\n`;
+
+            function getShelfCounts(shelfKey) {
+                let counts = {};
+                candies.forEach(c => counts[c] = 0);
+                Object.values(data[shelfKey]).forEach(shelfArr => {
+                    if (Array.isArray(shelfArr)) {
+                        shelfArr.forEach(item => { if (counts[item] !== undefined) counts[item]++; });
+                    }
+                });
+                return counts;
+            }
+
+            const locations = [
+                { name: "⛵ 5פ", counts: data.toren },
+                { name: "👈 18פ טען", counts: getShelfCounts('leftShelf') },
+                { name: "👉 18פ מפקד", counts: getShelfCounts('rightShelf') },
+                { name: "🦨 מארז עומד", counts: data.stinky }
+            ];
+
+            let overallCandyTotals = {};
+            candies.forEach(c => overallCandyTotals[c] = 0);
+
+            locations.forEach(loc => {
+                let items = [];
+                candies.forEach(c => {
+                    let count = loc.counts[c] || 0;
+                    if (count > 0) {
+                        items.push(`${count} ${c}`);
+                        overallCandyTotals[c] += count;
+                    }
+                });
+
+                text += `*${loc.name}:*\n`;
+                if (items.length > 0) {
+                    text += items.join(', ') + '\n\n';
+                } else {
+                    text += `(ריק)\n\n`;
+                }
+            });
+
+            text += `-------------------\n`;
+            text += `📊 *סיכום לפי סוג:* \n`;
+            let grandTotal = 0;
+            candies.forEach(c => {
+                let count = overallCandyTotals[c];
+                text += `• ${c}: ${count}\n`;
+                grandTotal += count;
+            });
+
+            text += `-------------------\n`;
+            text += `🎯 *סה"כ כללי:* ${grandTotal}`;
+
+            navigator.clipboard.writeText(text).then(() => {
+                alert('הדוח לפי מיקומים הועתק בהצלחה!');
+            }).catch(() => {
+                alert('שגיאה בהעתקת הדוח');
+            });
+        }
         function exportAsImage() {
             html2canvas(document.getElementById('exportArea'), { scale: 2 }).then(canvas => {
                 const link = document.createElement('a');
