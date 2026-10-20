@@ -12,15 +12,23 @@
         body { font-family: -apple-system, sans-serif; background: #f1f5f9; margin: 0; padding: 15px; color: #1e293b; }
         .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         h2 { margin: 0 0 10px 0; font-size: 1.1rem; color: #1e40af; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
+        
+        /* Mode Switcher Buttons */
+        .mode-container { display: flex; gap: 8px; margin-bottom: 15px; }
+        .btn-mode { flex: 1; padding: 10px 5px; font-size: 0.85rem; font-weight: bold; background: #e2e8f0; color: #334155; border: 2px solid #cbd5e1; border-radius: 8px; cursor: pointer; text-align: center; }
+        .btn-mode.active { background: #1e40af; color: white; border-color: #1e40af; }
+
         .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
         .counter { display: flex; gap: 8px; align-items: center; }
         button { border: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .btn-plus { background: #22c55e; color: white; }
         .btn-minus { background: #ef4444; color: white; }
         .count-val { font-size: 1.1rem; min-width: 30px; text-align: center; font-weight: bold; }
+        
         .form-group { margin-bottom: 10px; }
         .form-group label { display: block; font-size: 0.85rem; font-weight: bold; color: #64748b; margin-bottom: 4px; }
         .form-group input { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
+        
         .shelf-container { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
         .shelf-row { display: flex; gap: 5px; align-items: center; }
         .shelf-slot { flex: 1; padding: 6px 4px; font-size: 0.8rem; border-radius: 6px; border: 1px solid #cbd5e1; }
@@ -28,8 +36,8 @@
         #exportArea { background: #f1f5f9; padding: 0; margin: 0; }
 
         /* Summary Table Styling */
-        .summary-table { width: 100%; border-collapse: collapse; margin-top: 5px; background: white; font-size: 0.9rem; text-align: center; }
-        .summary-table th, .summary-table td { border: 1px solid #cbd5e1; padding: 8px 4px; }
+        .summary-table { width: 100%; border-collapse: collapse; margin-top: 5px; background: white; font-size: 0.85rem; text-align: center; }
+        .summary-table th, .summary-table td { border: 1px solid #cbd5e1; padding: 6px 2px; }
         .summary-table th { background: #f8fafc; color: #1e40af; font-weight: bold; }
         .summary-table tr:last-child { background: #e0f2fe; font-weight: bold; color: #0369a1; }
 
@@ -38,14 +46,21 @@
     </style>
 </head>
 <body>
-    <h1 style="text-align: center; color: #1e3a8a; font-size: 1.5rem; margin-bottom: 15px;"> 📋 דוח תחמושת 0.2</h1>
+    <h1 style="text-align: center; color: #1e3a8a; font-size: 1.5rem; margin-bottom: 15px;">📋 דוח תחמושת 0.3</h1>
+
+    <!-- בחירת גרסת אפליקציה -->
+    <div class="mode-container">
+        <button class="btn-mode" id="mode-old" onclick="switchMode('old')"> סימן 3</button>
+        <button class="btn-mode" id="mode-new" onclick="switchMode('new')"> סימן 4</button>
+        <button class="btn-mode" id="mode-fast" onclick="switchMode('fast')">פורמט מהיר</button>
+    </div>
 
     <div id="exportArea">
         <div class="card">
             <h2>פרטי ספירה</h2>
             <div class="form-group">
-                <label> צל"מ :</label>
-                <input type="text" id="warehouseNum" placeholder="הכנס מספר צלמ..." oninput="saveMeta()">
+                <label>צל"מ :</label>
+                <input type="text" id="warehouseNum" placeholder="הכנס צלמ..." oninput="saveMeta()">
             </div>
             <div class="form-group">
                 <label>תאריך:</label>
@@ -58,15 +73,8 @@
         <div class="card">
             <h2>📊 סיכום מלאי</h2>
             <table class="summary-table">
-                <thead>
-                    <tr>
-                        <th>סוג</th>
-                        <th>5פ</th>
-                        <th>18פ טען</th>
-                        <th>18פ מפקד</th>
-                        <th>עומד</th>
-                        <th>סה"כ</th>
-                    </tr>
+                <thead id="summaryTableHeader">
+                    <!-- מודבק דינמית לפי המצב -->
                 </thead>
                 <tbody id="summaryTableBody">
                     <!-- מודבק דינמית -->
@@ -75,79 +83,122 @@
         </div>
     </div>
 
-    <button class="btn-action" style="background:#059669" onclick="copyAsTextByLocation()">📋 העתק כטקסט   </button>
-    <!-- <button class="btn-action" onclick="copyAsText()">📋 העתק כטקסט</button> -->    <button class="btn-action btn-img" onclick="exportAsImage()">🖼️ שמור כתמונה מלאה</button>
+    <button class="btn-action" style="background:#059669" onclick="copyAsTextByLocation()">📋 העתק טקסט </button>
+    <button class="btn-action btn-img" onclick="exportAsImage()">🖼️ שמור כתמונה מלאה</button>
     <button class="btn-action" style="background:#64748b" onclick="resetData()">איפוס נתונים</button>
 
     <script>
-        const candies = ["חצב", "כלנית", "חלול", "חץ", "אלומיניום","אחר"];
-        const MAX_TOREN = 10; // 
-        const MAX_STINKY = 4; // שנה למספר המרבי הכולל שתרצה לאפשר במארז מסריח
-        let data = JSON.parse(localStorage.getItem('inv_v6')) || {
-            warehouse: "", date: new Date().toISOString().split('T')[0],
-            toren: {}, leftShelf: {}, rightShelf: {},stinky: {}
+        const candies = ["חצב", "כלנית", "חלול", "חץ", "אלומיניום", "אחר"];
+        const MAX_TOREN = 10;
+        const MAX_STINKY = 10;
+        const MAX_FAST = 50;
+
+        let currentMode = localStorage.getItem('inv_current_mode') || 'old';
+
+        let appData = JSON.parse(localStorage.getItem('inv_v9_names')) || {
+            warehouse: "",
+            date: new Date().toISOString().split('T')[0],
+            old: { toren: {}, stinky: {}, leftShelf: {}, rightShelf: {} },
+            new: { toren: {}, stinky: {}, leftShelf: {}, rightShelf: {} },
+            fast: { counter: {} }
         };
 
-        candies.forEach(c => { 
-            data.toren[c] = data.toren[c] || 0; 
-            data.stinky[c] = data.stinky[c] || 0; 
+        ['old', 'new'].forEach(m => {
+            candies.forEach(c => {
+                appData[m].toren[c] = appData[m].toren[c] || 0;
+                appData[m].stinky[c] = appData[m].stinky[c] || 0;
+            });
+            for(let i=0; i<5; i++) {
+                appData[m].leftShelf[i] = appData[m].leftShelf[i] || [];
+                appData[m].rightShelf[i] = appData[m].rightShelf[i] || [];
+            }
         });
-        
-        for(let i=0; i<5; i++) { 
-            data.leftShelf[i] = data.leftShelf[i] || []; 
-            data.rightShelf[i] = data.rightShelf[i] || []; 
+        candies.forEach(c => { appData.fast.counter[c] = appData.fast.counter[c] || 0; });
+
+        function saveMeta() {
+            appData.warehouse = document.getElementById('warehouseNum').value;
+            appData.date = document.getElementById('countDate').value;
+            saveState();
         }
 
-        function saveMeta() { 
-            data.warehouse = document.getElementById('warehouseNum').value; 
-            data.date = document.getElementById('countDate').value; 
-            localStorage.setItem('inv_v6', JSON.stringify(data)); 
+        function saveState() {
+            localStorage.setItem('inv_current_mode', currentMode);
+            localStorage.setItem('inv_v9_names', JSON.stringify(appData));
         }
-        
+
+        function switchMode(mode) {
+            currentMode = mode;
+            saveState();
+            render();
+        }
+
+        function getNames() {
+            if (currentMode === 'new') {
+                return { toren: "10פ", left: "17פ טען", right: "17פ מפקד", stinky: "עומדים" };
+            }
+            return { toren: "5פ", left: "18פ טען", right: "18פ מפקד", stinky: "עומדים" };
+        }
+
         function render() {
-            const app = document.getElementById('app'); 
+            document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
+            document.getElementById(`mode-${currentMode}`).classList.add('active');
+
+            const app = document.getElementById('app');
             app.innerHTML = '';
-            app.appendChild(renderCounter("⛵ מארז 5פ", "toren"));
-            app.appendChild(renderShelf("👈 מארז 18פ טען", "leftShelf"));
-            app.appendChild(renderShelf("👉 מארז 18פ מפקד", "rightShelf"));
-            app.appendChild(renderCounter("🦨 מארז עומד", "stinky"));
-            
-            document.getElementById('warehouseNum').value = data.warehouse || "";
-            document.getElementById('countDate').value = data.date || "";
+
+            document.getElementById('warehouseNum').value = appData.warehouse || "";
+            document.getElementById('countDate').value = appData.date || "";
+
+            if (currentMode === 'fast') {
+                app.appendChild(renderCounter("⚡ הזנה מהירה (עד 50 יח')", "fastCounter", "counter", MAX_FAST));
+            } else {
+                const names = getNames();
+                // סדר אחיד: 10פ/תורן <- שמאלי <- ימני <- מסריח
+                app.appendChild(renderCounter(`⛵  ${names.toren}`, "toren", "toren", MAX_TOREN));
+                app.appendChild(renderShelf(`👈  ${names.left}`, "leftShelf"));
+                app.appendChild(renderShelf(`👉  ${names.right}`, "rightShelf"));
+                app.appendChild(renderCounter(`🦨  ${names.stinky}`, "stinky", "stinky", MAX_STINKY));
+            }
+
             updateTotals();
         }
 
-        function renderCounter(title, key) {
-            const card = document.createElement('div'); 
+        function renderCounter(title, key, targetDataKey, maxLimit) {
+            const card = document.createElement('div');
             card.className = 'card';
             let html = `<h2>${title}</h2>`;
+            let activeObj = (currentMode === 'fast') ? appData.fast.counter : appData[currentMode][targetDataKey];
+            
             candies.forEach(c => {
+                let val = activeObj[c] || 0;
                 html += `
                     <div class="row">
                         <span>${c}</span>
                         <div class="counter">
-                            <button class="btn-minus" onclick="updateCount('${key}', '${c}', -1)">-</button>
-                            <span class="count-val" id="${key}-${c}">${data[key][c]}</span>
-                            <button class="btn-plus" onclick="updateCount('${key}', '${c}', 1)">+</button>
+                            <button class="btn-minus" onclick="updateCount('${targetDataKey}', '${c}', -1, ${maxLimit})">-</button>
+                            <span class="count-val" id="cnt-${key}-${c}">${val}</span>
+                            <button class="btn-plus" onclick="updateCount('${targetDataKey}', '${c}', 1, ${maxLimit})">+</button>
                         </div>
                     </div>`;
             });
-            card.innerHTML = html; 
+            card.innerHTML = html;
             return card;
         }
 
         function renderShelf(title, key) {
-            const card = document.createElement('div'); 
+            const card = document.createElement('div');
             card.className = 'card';
             let html = `<h2>${title}</h2><div class="shelf-container">`;
-            const shelfSizes = [4, 4, 4, 3, 3];
+            
+            const shelfSizes = (currentMode === 'new') ? [2, 4, 4, 4, 3] : [4, 2, 2, 2, 2];
             
             for(let i=0; i<5; i++) {
                 html += `<div class="shelf-row"><span style="font-size:0.8rem; width:45px; font-weight:bold; color:#64748b;">מדף ${i+1}</span>`;
                 for(let j=0; j<shelfSizes[i]; j++) {
+                    const currentVal = appData[currentMode][key][i] ? appData[currentMode][key][i][j] : "";
                     html += `<select class="shelf-slot" onchange="updateShelf('${key}', ${i}, ${j}, this.value)"><option value="">(ריק)</option>`;
                     candies.forEach(c => {
-                        const selected = (data[key][i] && data[key][i][j] === c) ? 'selected' : '';
+                        const selected = (currentVal === c) ? 'selected' : '';
                         html += `<option value="${c}" ${selected}>${c}</option>`;
                     });
                     html += `</select>`;
@@ -155,212 +206,230 @@
                 html += `</div>`;
             }
             html += `</div>`;
-            card.innerHTML = html; 
+            card.innerHTML = html;
             return card;
         }
 
-        function updateCount(key, candy, val) { 
-            if (val > 0) {
-                // הגבלה כוללת למארז תורן
-                if (key === 'toren') {
-                    let torenTotal = Object.values(data.toren).reduce((a, b) => a + b, 0);
-                    if (torenTotal + val > MAX_TOREN) {
-                        alert(`מארז תורן מלא! מותר עד ${MAX_TOREN} סוכריות בסך הכל.`);
-                        return;
-                    }
-                }
+        function updateCount(targetDataKey, candy, val, maxLimit) {
+            let activeObj = (currentMode === 'fast') ? appData.fast.counter : appData[currentMode][targetDataKey];
 
-                // הגבלה כוללת למארז מסריח
-                if (key === 'stinky') {
-                    let stinkyTotal = Object.values(data.stinky).reduce((a, b) => a + b, 0);
-                    if (stinkyTotal + val > MAX_STINKY) {
-                        alert(`מארז מסריח מלא! מותר עד ${MAX_STINKY} סוכריות בסך הכל.`);
-                        return;
-                    }
+            if (val > 0 && maxLimit) {
+                let total = Object.values(activeObj).reduce((a, b) => a + b, 0);
+                if (total + val > maxLimit) {
+                    alert(`הגעת למגבלה! מותר עד ${maxLimit} סוכריות בסך הכל.`);
+                    return;
                 }
             }
 
-            data[key][candy] = Math.max(0, data[key][candy] + val); 
-            saveAndRefresh(); 
+            activeObj[candy] = Math.max(0, (activeObj[candy] || 0) + val);
+            saveState();
+            updateTotals();
         }
-        function updateShelf(key, shelf, slot, val) { 
-            if(!data[key][shelf]) data[key][shelf] = [];
-            data[key][shelf][slot] = val; 
-            saveAndRefresh(); 
-        }
-        
-        function saveAndRefresh() { 
-            localStorage.setItem('inv_v6', JSON.stringify(data)); 
-            updateTotals(); 
+
+        function updateShelf(key, shelf, slot, val) {
+            if(!appData[currentMode][key][shelf]) appData[currentMode][key][shelf] = [];
+            appData[currentMode][key][shelf][slot] = val;
+            saveState();
+            updateTotals();
         }
 
         function updateTotals() {
-            // Update counter texts on screen
-            ["toren", "stinky"].forEach(k => {
-                candies.forEach(c => {
-                    const el = document.getElementById(`${k}-${c}`);
-                    if(el) el.innerText = data[k][c];
-                });
-            });
-
+            let headerHTML = '';
             let tableHTML = '';
-            let totalsToren = 0, totalsStinky = 0, totalsLeft = 0, totalsRight = 0, grandTotal = 0;
 
-            candies.forEach(c => {
-                let t = data.toren[c] || 0;
-                let s = data.stinky[c] || 0;
-                
-                let l = 0;
-                Object.values(data.leftShelf).forEach(shelfArr => {
-                    if(Array.isArray(shelfArr)) {
-                        shelfArr.forEach(item => { if(item === c) l++; });
-                    }
+            if (currentMode === 'fast') {
+                headerHTML = `<tr><th>סוג</th><th>כמות</th></tr>`;
+                let grandTotal = 0;
+                candies.forEach(c => {
+                    let count = appData.fast.counter[c] || 0;
+                    grandTotal += count;
+                    const el = document.getElementById(`cnt-fastCounter-${c}`);
+                    if(el) el.innerText = count;
+
+                    tableHTML += `<tr><td><b>${c}</b></td><td>${count}</td></tr>`;
+                });
+                tableHTML += `<tr><td>סה"כ כללי</td><td>${grandTotal}</td></tr>`;
+            } else {
+                const names = getNames();
+                headerHTML = `<tr><th>סוג</th><th>${names.toren}</th><th>${names.left}</th><th>${names.right}</th><th>${names.stinky}</th><th>סה"כ</th></tr>`;
+
+                ["toren", "stinky"].forEach(k => {
+                    candies.forEach(c => {
+                        const el = document.getElementById(`cnt-${k}-${c}`);
+                        if(el) el.innerText = appData[currentMode][k][c] || 0;
+                    });
                 });
 
-                let r = 0;
-                Object.values(data.rightShelf).forEach(shelfArr => {
-                    if(Array.isArray(shelfArr)) {
-                        shelfArr.forEach(item => { if(item === c) r++; });
-                    }
+                let totalsToren = 0, totalsLeft = 0, totalsRight = 0, totalsStinky = 0, grandTotal = 0;
+
+                candies.forEach(c => {
+                    let t = appData[currentMode].toren[c] || 0;
+                    let s = appData[currentMode].stinky[c] || 0;
+                    
+                    let l = 0;
+                    Object.values(appData[currentMode].leftShelf).forEach(arr => {
+                        if(Array.isArray(arr)) arr.forEach(item => { if(item === c) l++; });
+                    });
+
+                    let r = 0;
+                    Object.values(appData[currentMode].rightShelf).forEach(arr => {
+                        if(Array.isArray(arr)) arr.forEach(item => { if(item === c) r++; });
+                    });
+
+                    let rowSum = t + l + r + s;
+
+                    totalsToren += t;
+                    totalsLeft += l;
+                    totalsRight += r;
+                    totalsStinky += s;
+                    grandTotal += rowSum;
+
+                    // סדר עמודות אחיד: 10פ/תורן, שמאלי, ימני, מסריח, סה"כ
+                    tableHTML += `
+                        <tr>
+                            <td><b>${c}</b></td>
+                            <td>${t}</td>
+                            <td>${l}</td>
+                            <td>${r}</td>
+                            <td>${s}</td>
+                            <td><b>${rowSum}</b></td>
+                        </tr>`;
                 });
-
-                let rowSum = t + s + l + r;
-
-                totalsToren += t;
-                totalsStinky += s;
-                totalsLeft += l;
-                totalsRight += r;
-                grandTotal += rowSum;
 
                 tableHTML += `
                     <tr>
-                        <td><b>${c}</b></td>
-                        <td>${t}</td>
-                        <td>${l}</td>
-                        <td>${r}</td>
-                        <td>${s}</td>
-                        <td><b>${rowSum}</b></td>
-                    </tr>
-                `;
-            });
+                        <td>סה"כ כללי</td>
+                        <td>${totalsToren}</td>
+                        <td>${totalsLeft}</td>
+                        <td>${totalsRight}</td>
+                        <td>${totalsStinky}</td>
+                        <td>${grandTotal}</td>
+                    </tr>`;
+            }
 
-            // Footer row
-            tableHTML += `
-                <tr>
-                    <td>סה"כ כללי</td>
-                    <td>${totalsToren}</td>
-                    <td>${totalsLeft}</td>
-                    <td>${totalsRight}</td>
-                    <td>${totalsStinky}</td>
-                    <td>${grandTotal}</td>
-                </tr>
-            `;
-
+            document.getElementById('summaryTableHeader').innerHTML = headerHTML;
             document.getElementById('summaryTableBody').innerHTML = tableHTML;
         }
 
-        function copyAsText() {
-            let text = `📋 דוח תחמושת\n`;
-            text += `🏢 צל"מ: ${data.warehouse || 'לא צוין'}\n`;
-            text += `📅 תאריך: ${data.date || 'לא צוין'}\n`;
-            text += `-------------------\n`;
-            
-            candies.forEach(c => {
-                let t = data.toren[c] || 0;
-                let s = data.stinky[c] || 0;
-                let l = 0, r = 0;
-                Object.values(data.leftShelf).forEach(arr => { if(Array.isArray(arr)) arr.forEach(item => { if(item === c) l++; }); });
-                Object.values(data.rightShelf).forEach(arr => { if(Array.isArray(arr)) arr.forEach(item => { if(item === c) r++; }); });
-                let rowSum = t + s + l + r;
-                text += `• ${c} | 5פ: ${t}, 18פ טען: ${l}, 18פ מפקד: ${r}, עומד: ${s} | סה"כ: ${rowSum}\n`;
-            });
-            
-            navigator.clipboard.writeText(text).then(() => {
-                alert('הדוח הועתק בהצלחה ללוח!');
-            }).catch(() => {
-                alert('שגיאה בהעתקת הדוח');
-            });
-        }
-
         function copyAsTextByLocation() {
-            let text = `📋 דוח ספירת מלאי לפי מיקומים\n`;
-            text += `🏢 צלמ: ${data.warehouse || 'לא צוין'}\n`;
-            text += `📅 תאריך: ${data.date || 'לא צוין'}\n`;
+            let modeName = currentMode === 'old' ? ' סימן 3' : (currentMode === 'new' ? 'סימן 4 ' : 'פורמט מהיר');
+            let text = `📋 דוח ספירת מלאי (${modeName})\n`;
+            text += `🏢 צלמ: ${appData.warehouse || 'לא צוין'}\n`;
+            let formattedDate = 'לא צוין';
+            if (appData.date) {
+                const [year, month, day] = appData.date.split('-');
+                formattedDate = `${day}/${month}/${year}`;
+            }
+            text += `📅 תאריך: ${formattedDate}\n`;
             text += `-------------------\n\n`;
 
-            function getShelfCounts(shelfKey) {
-                let counts = {};
-                candies.forEach(c => counts[c] = 0);
-                Object.values(data[shelfKey]).forEach(shelfArr => {
-                    if (Array.isArray(shelfArr)) {
-                        shelfArr.forEach(item => { if (counts[item] !== undefined) counts[item]++; });
+            if (currentMode === 'fast') {
+                let grandTotal = 0;
+                text += `⚡ *סיכום לפי סוג:*\n`;
+                candies.forEach(c => {
+                    let count = appData.fast.counter[c] || 0;
+                    if(count > 0) {
+                        text += `• ${c}: ${count}\n`;
+                        grandTotal += count;
                     }
                 });
-                return counts;
+                text += `-------------------\n🎯 *סה"כ כללי:* ${grandTotal}`;
+            } else {
+                function getShelfCounts(shelfKey) {
+                    let counts = {};
+                    candies.forEach(c => counts[c] = 0);
+                    Object.values(appData[currentMode][shelfKey]).forEach(shelfArr => {
+                        if (Array.isArray(shelfArr)) {
+                            shelfArr.forEach(item => { if (counts[item] !== undefined) counts[item]++; });
+                        }
+                    });
+                    return counts;
+                }
+
+                const names = getNames();
+                // סדר אחיד: 10פ/תורן <- שמאלי <- ימני <- מסריח
+                const locations = [
+                    { name: `⛵  ${names.toren}`, counts: appData[currentMode].toren },
+                    { name: `👈  ${names.left}`, counts: getShelfCounts('leftShelf') },
+                    { name: `👉  ${names.right}`, counts: getShelfCounts('rightShelf') },
+                    { name: `🦨  ${names.stinky}`, counts: appData[currentMode].stinky }
+                ];
+
+                let overallCandyTotals = {};
+                candies.forEach(c => overallCandyTotals[c] = 0);
+
+                locations.forEach(loc => {
+                    let items = [];
+                    candies.forEach(c => {
+                        let count = loc.counts[c] || 0;
+                        if (count > 0) {
+                            items.push(`${count} ${c}`);
+                            overallCandyTotals[c] += count;
+                        }
+                    });
+
+                    text += `*${loc.name}:*\n`;
+                    if (items.length > 0) {
+                        text += items.join(', ') + '\n\n';
+                    } else {
+                        text += `(ריק)\n\n`;
+                    }
+                });
+
+                text += `-------------------\n`;
+                text += `📊 *סיכום לפי סוג:* \n`;
+                let grandTotal = 0;
+                candies.forEach(c => {
+                    let count = overallCandyTotals[c];
+                    text += `• ${c}: ${count}\n`;
+                    grandTotal += count;
+                });
+
+                text += `-------------------\n`;
+                text += `🎯 *סה"כ כללי:* ${grandTotal}`;
             }
 
-            const locations = [
-                { name: "⛵ 5פ", counts: data.toren },
-                { name: "👈 18פ טען", counts: getShelfCounts('leftShelf') },
-                { name: "👉 18פ מפקד", counts: getShelfCounts('rightShelf') },
-                { name: "🦨 מארז עומד", counts: data.stinky }
-            ];
-
-            let overallCandyTotals = {};
-            candies.forEach(c => overallCandyTotals[c] = 0);
-
-            locations.forEach(loc => {
-                let items = [];
-                candies.forEach(c => {
-                    let count = loc.counts[c] || 0;
-                    if (count > 0) {
-                        items.push(`${count} ${c}`);
-                        overallCandyTotals[c] += count;
-                    }
-                });
-
-                text += `*${loc.name}:*\n`;
-                if (items.length > 0) {
-                    text += items.join(', ') + '\n\n';
-                } else {
-                    text += `(ריק)\n\n`;
-                }
-            });
-
-            text += `-------------------\n`;
-            text += `📊 *סיכום לפי סוג:* \n`;
-            let grandTotal = 0;
-            candies.forEach(c => {
-                let count = overallCandyTotals[c];
-                text += `• ${c}: ${count}\n`;
-                grandTotal += count;
-            });
-
-            text += `-------------------\n`;
-            text += `🎯 *סה"כ כללי:* ${grandTotal}`;
-
             navigator.clipboard.writeText(text).then(() => {
-                alert('הדוח לפי מיקומים הועתק בהצלחה!');
+                alert('הדוח הועתק בהצלחה!');
             }).catch(() => {
                 alert('שגיאה בהעתקת הדוח');
             });
         }
+
         function exportAsImage() {
             html2canvas(document.getElementById('exportArea'), { scale: 2 }).then(canvas => {
                 const link = document.createElement('a');
-                link.download = `inventory-${data.warehouse || 'report'}.png`;
+                link.download = `inventory-${appData.warehouse || 'report'}.png`;
                 link.href = canvas.toDataURL('image/png');
                 link.click();
             });
         }
-        
-        function resetData() { 
-            if(confirm('לאפס את כל הנתונים?')) { 
-                localStorage.removeItem('inv_v6'); 
-                location.reload(); 
-            } 
+
+        function resetData() {
+            if(confirm('לאפס את כל הנתונים, כולל מספר צלמ ותאריך?')) {
+                // איפוס פרטי הספירה (מספר צלמ ותאריך)
+                appData.warehouse = "";
+                appData.date = new Date().toISOString().split('T')[0];
+
+                // איפוס הנתונים של המצב הנוכחי
+                if(currentMode === 'fast') {
+                    candies.forEach(c => appData.fast.counter[c] = 0);
+                } else {
+                    candies.forEach(c => {
+                        appData[currentMode].toren[c] = 0;
+                        appData[currentMode].stinky[c] = 0;
+                    });
+                    for(let i=0; i<5; i++) {
+                        appData[currentMode].leftShelf[i] = [];
+                        appData[currentMode].rightShelf[i] = [];
+                    }
+                }
+                
+                saveState();
+                render();
+            }
         }
-        
+
         render();
     </script>
 </body>
